@@ -59,11 +59,12 @@ jobs:
       - name: The DAG imports and has the four steps in order
         run: |
           python - <<'PY'
-          from airflow.models import DagBag
-          bag = DagBag(dag_folder="orchestration/airflow/dags", include_examples=False)
-          assert not bag.import_errors, bag.import_errors
-          dag = bag.get_dag("metasearch_billing_backbone")
-          order = [t.task_id for t in dag.topological_sort()]
+          import importlib.util
+          spec = importlib.util.spec_from_file_location("dag", "orchestration/airflow/dags/billing_backbone.py")
+          mod = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          order = [t.task_id for t in mod.dag.topological_sort()]
+          assert mod.dag.dag_id == "metasearch_billing_backbone" and mod.dag.max_active_runs == 1
           assert order == ["load", "build", "check", "invoice"], order
           print("DAG ok:", order)
           PY
