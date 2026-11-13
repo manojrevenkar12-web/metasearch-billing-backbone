@@ -1,0 +1,84 @@
+# The simulated metasearch: four brands sending redirect logs, eighteen advertising partners paying per click.
+# Every partner name is invented. The truth this file produces is read only by scripts/evaluate.py.
+
+name = "dev"
+seed = 7
+start = "2026-09-01"          # first day of traffic (UTC)
+days = 62                     # through 2026-11-01, so every partner's October is complete in its own time zone
+clicks_per_day = 11000
+brands = ["kayak", "momondo", "cheapflights", "hotelscombined"]
+brand_share = [0.46, 0.24, 0.16, 0.14]
+
+# partners: id, name, vertical, contract currency, billing time zone, repeat-click window (s), CPC factor
+partners = [
+  { id = "P01", name = "Alder Air", vertical = "flight", currency = "EUR", tz = "Europe/Berlin", window = 30, factor = 1.10 },
+  { id = "P02", name = "Bluefin Airlines", vertical = "flight", currency = "GBP", tz = "Europe/London", window = 10, factor = 1.00 },
+  { id = "P03", name = "Corvo Air", vertical = "flight", currency = "EUR", tz = "Europe/Madrid", window = 60, factor = 0.85 },
+  { id = "P04", name = "Halcyon Airways", vertical = "flight", currency = "USD", tz = "America/New_York", window = 30, factor = 1.20 },
+  { id = "P05", name = "Meridian Jet", vertical = "flight", currency = "EUR", tz = "Europe/Paris", window = 30, factor = 0.95 },
+  { id = "P06", name = "Skyreach Nordic", vertical = "flight", currency = "SEK", tz = "Europe/Stockholm", window = 10, factor = 0.90 },
+  { id = "P07", name = "TripLantern", vertical = "flight", currency = "EUR", tz = "Europe/Amsterdam", window = 60, factor = 1.05 },
+  { id = "P08", name = "Wayfarer Travel", vertical = "hotel", currency = "USD", tz = "America/Los_Angeles", window = 30, factor = 1.15 },
+  { id = "P09", name = "JetQuote", vertical = "flight", currency = "GBP", tz = "Europe/London", window = 30, factor = 0.80 },
+  { id = "P10", name = "Globetrot", vertical = "hotel", currency = "EUR", tz = "Europe/Berlin", window = 10, factor = 0.90 },
+  { id = "P11", name = "Brightstay Hotels", vertical = "hotel", currency = "EUR", tz = "Europe/Berlin", window = 30, factor = 1.10 },
+  { id = "P12", name = "Linden Suites", vertical = "hotel", currency = "USD", tz = "America/Chicago", window = 60, factor = 1.00 },
+  { id = "P13", name = "Harbourline Inns", vertical = "hotel", currency = "GBP", tz = "Europe/London", window = 30, factor = 0.95 },
+  { id = "P14", name = "Quayside Resorts", vertical = "hotel", currency = "EUR", tz = "Europe/Rome", window = 30, factor = 1.25 },
+  { id = "P15", name = "Pinecrest Lodges", vertical = "hotel", currency = "USD", tz = "America/Denver", window = 10, factor = 0.85 },
+  { id = "P16", name = "Roadly Rentals", vertical = "car", currency = "EUR", tz = "Europe/Berlin", window = 30, factor = 1.00 },
+  { id = "P17", name = "Kestrel Car Hire", vertical = "car", currency = "GBP", tz = "Europe/London", window = 60, factor = 0.90 },
+  { id = "P18", name = "Mesa Auto", vertical = "car", currency = "USD", tz = "America/Phoenix", window = 30, factor = 1.10 },
+]
+
+# Planted incidents. The pipeline is not told about any of them.
+incidents = [
+  # a brand's log shipping stops; the hours arrive late
+  { kind = "outage", brand = "cheapflights", start = "2026-09-30T17:00Z", end = "2026-10-01T00:00Z", arrives = "2026-10-03T09:00Z" },
+  { kind = "outage", brand = "momondo", start = "2026-10-08T10:00Z", end = "2026-10-08T15:00Z", arrives = "2026-10-09T16:00Z" },
+  # an app release sends every redirect twice
+  { kind = "double_firing", brand = "kayak", device = "mobile", start = "2026-10-06T00:00Z", end = "2026-10-08T12:00Z" },
+  # a scraper clicks hotel offers from a few networks
+  { kind = "bot_storm", brand = "hotelscombined", market = "DE", start = "2026-10-12T00:00Z", end = "2026-10-15T00:00Z", per_day = 1500 },
+  # a brand starts sending a new device value before it updates its schema contract
+  { kind = "enum_drift", brand = "momondo", field = "device", old = "mobile", new = "MOBILE_APP", start = "2026-10-29T00:00Z", contract_arrives = "2026-11-04T11:00Z" },
+  # a signed rate change, effective earlier than it is recorded
+  { kind = "amendment", partner = "P11", markets = ["DE"], devices = ["desktop", "mobile"], change = -0.15, effective = "2026-10-01", recorded = "2026-10-20T10:00Z" },
+  { kind = "amendment", partner = "P08", markets = ["US"], devices = ["desktop"], change = 0.10, effective = "2026-10-15", recorded = "2026-11-08T15:00Z" },
+  # the reference-rate file stops arriving for a few days
+  { kind = "fx_delay", first = "2026-09-23", last = "2026-09-25", arrives = "2026-09-29T15:00Z" },
+]
+
+[markets]                     # market -> [traffic share, time zone, CPC multiplier]
+DE = [0.20, "Europe/Berlin", 1.10]
+GB = [0.16, "Europe/London", 1.20]
+US = [0.22, "America/New_York", 1.30]
+FR = [0.10, "Europe/Paris", 1.00]
+ES = [0.09, "Europe/Madrid", 0.85]
+IT = [0.08, "Europe/Rome", 0.90]
+NL = [0.08, "Europe/Amsterdam", 1.05]
+SE = [0.07, "Europe/Stockholm", 1.00]
+
+[devices]                     # device -> [share, CPC multiplier]
+desktop = [0.48, 1.00]
+mobile = [0.44, 0.80]
+tablet = [0.08, 0.90]
+
+[verticals]                   # base CPC in EUR cents, and which brands carry the vertical (relative weight)
+flight = { cpc = 62, brands = { kayak = 1.0, momondo = 1.0, cheapflights = 1.0, hotelscombined = 0.0 } }
+hotel = { cpc = 88, brands = { kayak = 0.8, momondo = 0.6, cheapflights = 0.1, hotelscombined = 1.0 } }
+car = { cpc = 41, brands = { kayak = 0.3, momondo = 0.2, cheapflights = 0.1, hotelscombined = 0.0 } }
+
+[traffic]
+bot_share = 0.05              # automated clicks among all events
+bot_crude_share = 0.65        # bots with a datacenter network, a headless agent or an inhuman click speed
+monitor_share = 0.004         # the company's own synthetic monitoring clicks
+repeat_click_share = 0.04     # people clicking the same offer again shortly after
+nat_share = 0.012             # people behind a busy corporate network address
+partial_file_share = 0.012    # files that land half-uploaded first
+redelivery_share = 0.006      # files a brand delivers a second time under another name
+
+[fx]                          # EUR -> currency, start rate and daily volatility
+USD = [1.165, 0.0035]
+GBP = [0.862, 0.0022]
+SEK = [11.15, 0.0040]

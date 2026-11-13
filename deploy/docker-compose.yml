@@ -1,0 +1,32 @@
+# Local stack: the control store on PostgreSQL, Trino for ad-hoc queries, the API over the warehouse.
+#   docker compose -f deploy/docker-compose.yml up --build
+services:
+  postgres:
+    image: postgres:16
+    environment: { POSTGRES_PASSWORD: billing, POSTGRES_DB: billing }
+    ports: ["5432:5432"]
+    healthcheck: { test: ["CMD", "pg_isready", "-U", "postgres"], interval: 5s, retries: 20 }
+  trino:
+    image: trinodb/trino:latest
+    ports: ["8080:8080"]
+  world:
+    build: ..
+    command: ["world", "--config", "config/world.toml", "--out", "/data/world"]
+    volumes: ["data:/data"]
+  backbone:
+    build: ..
+    depends_on:
+      postgres: { condition: service_healthy }
+      world: { condition: service_completed_successfully }
+    environment: { MBB_CONTROL_DSN: "postgresql://postgres:billing@postgres:5432/billing" }
+    command: ["schedule", "--world", "/data/world", "--state", "/data/warehouse.duckdb"]
+    volumes: ["data:/data"]
+  api:
+    build: ..
+    depends_on: { backbone: { condition: service_completed_successfully } }
+    environment: { MBB_CONTROL_DSN: "postgresql://postgres:billing@postgres:5432/billing" }
+    command: ["serve", "--world", "/data/world", "--state", "/data/warehouse.duckdb", "--port", "8000"]
+    ports: ["8000:8000"]
+    volumes: ["data:/data"]
+volumes:
+  data:

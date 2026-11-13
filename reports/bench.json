@@ -1,0 +1,22 @@
+{
+ "clicks": 750226,
+ "machine": "x86_64, 3.13.16",
+ "pairs": [
+  {
+   "query": "price each click by the contract as known now",
+   "before_s": 0.381,
+   "after_s": 0.284,
+   "speedup": 1.3,
+   "identical": true,
+   "rows": 750226
+  },
+  {
+   "query": "find repeat clicks inside the partner's window",
+   "before_s": 0.557,
+   "after_s": 0.278,
+   "speedup": 2.0,
+   "identical": true,
+   "rows": 750226
+  }
+ ]
+}

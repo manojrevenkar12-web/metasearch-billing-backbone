@@ -1,0 +1,77 @@
+# Questions for the self-service reader, with the plan a BI engineer would write for each.
+# "today" is the date the questions are asked. A plan with metric = "" expects a refusal.
+today = "2026-11-10"
+
+[[q]]
+text = "How many billed clicks did Alder Air get in October?"
+metric = "billed_clicks"
+filters = { partner = "P01" }
+start = "2026-10-01"
+end = "2026-11-01"
+[[q]]
+text = "Billable clicks by brand last month"
+metric = "billed_clicks"
+by = ["brand"]
+start = "2026-10-01"
+end = "2026-11-01"
+[[q]]
+text = "What was our click revenue in September by partner?"
+metric = "revenue_eur"
+by = ["partner"]
+start = "2026-09-01"
+end = "2026-10-01"
+[[q]]
+text = "bot share by brand yesterday"
+metric = "invalid_share"
+by = ["brand"]
+start = "2026-11-09"
+end = "2026-11-10"
+[[q]]
+text = "Invalid traffic share on hotelscombined in Germany in October, by reason"
+metric = "invalid_share"
+by = ["reason"]
+filters = { brand = "hotelscombined", market = "DE" }
+start = "2026-10-01"
+end = "2026-11-01"
+[[q]]
+text = "invoiced amount by month for Brightstay Hotels"
+metric = "invoiced_amount"
+by = ["month"]
+filters = { partner = "P11" }
+[[q]]
+text = "How many clicks did momondo bill on mobile last week?"
+metric = "billed_clicks"
+filters = { brand = "momondo", device = "mobile" }
+start = "2026-11-02"
+end = "2026-11-09"
+[[q]]
+text = "revenue per day in October"
+metric = "revenue_eur"
+by = ["day"]
+start = "2026-10-01"
+end = "2026-11-01"
+[[q]]
+text = "paid clicks per market for Wayfarer Travel in September"
+metric = "billed_clicks"
+by = ["market"]
+filters = { partner = "P08" }
+start = "2026-09-01"
+end = "2026-10-01"
+[[q]]
+text = "What is our conversion rate on kayak?"
+metric = ""
+[[q]]
+text = "Why did revenue drop on the 8th?"
+metric = ""
+[[q]]
+text = "invoices by kind"
+metric = "invoiced_amount"
+by = ["kind"]
+[[q]]
+text = "billed clicks for cheapflights in the UK by device"
+metric = "billed_clicks"
+by = ["device"]
+filters = { brand = "cheapflights", market = "GB" }
+[[q]]
+text = "Revenue by brand in October"
+metric = ""   # the revenue mart is kept per partner: the honest answer is that it cannot be cut by brand

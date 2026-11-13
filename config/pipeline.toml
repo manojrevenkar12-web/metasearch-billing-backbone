@@ -1,0 +1,38 @@
+# Settings for the billing backbone. Thresholds live here, not in code.
+
+landing = "landing"                  # under the world root
+daily_run_utc = "06:00"              # the scheduled run
+first_run = "2026-09-02T06:00Z"
+last_run = "2026-11-10T06:00Z"
+
+[safeguards]                         # every safeguard can be switched off; the evaluation measures each one
+complete_files_only = true           # load a file only when its manifest is in and the bytes match it
+load_content_once = true             # a file delivered twice under another name is loaded once
+dedupe_click_ids = true              # a redirect logged twice is one click
+repeat_click_window = true           # the contract's repeat-click window per partner
+bot_rules = true                     # the invalid-traffic rules below (off: only agents that say "bot")
+partner_local_time = true            # months and rate dates in the partner's billing time zone, DST included
+quarantine_unknown_values = true     # values outside the brand's schema contract are held, not dropped
+reprice_amendments = true            # a rate amendment applies from its effective date, whenever it is recorded
+fx_as_published = true               # EUR revenue uses the latest reference rate actually published
+hold_invoices = true                 # an invoice waits while a blocking check fails for its partner and month
+adjustment_notes = true              # a change after issue becomes a credit or debit note, never an overwrite
+
+[bot_rules]
+min_search_to_click_ms = 300         # faster than a person reads a result
+max_clicks_per_ip24_hour = 25        # one /24 network clicking more than this in an hour
+agent_markers = ["headless", "bot", "python-", "curl", "syntheticmonitor"]
+
+[invoicing]
+first_month = "2026-09"           # the first month this backbone invoices
+issue_from_day = 2                   # invoices for a month are issued from the 2nd of the next month
+hold_limit_day = 10                  # after this day a held invoice goes out with the open checks listed
+adjustment_min_minor = 1             # adjustments below this (in minor units) are not issued
+
+[checks]
+volume_ratio_low = 0.6               # brand-day volume against the median of the same weekday, three weeks back
+volume_ratio_high = 1.5
+duplicate_id_share = 0.005           # share of repeated click ids in a brand-day
+invalid_share_high = 0.12            # share of invalid traffic in a brand-day
+partner_report_tolerance = 0.02      # a partner's own count further than this from the invoice is a dispute risk
+fx_stale_business_days = 1

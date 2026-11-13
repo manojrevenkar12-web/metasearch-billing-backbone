@@ -1,0 +1,19 @@
+@import "@fontsource/barlow/400.css";
+@import "@fontsource/barlow/500.css";
+@import "@fontsource/barlow/700.css";
+@import "@fontsource/barlow-condensed/500.css";
+@import "@fontsource/barlow-condensed/700.css";
+
+:root {
+  --paper: #F6F7F4; --ink: #1D232B; --focus: #2457C5;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+.grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.board-row { display: grid; grid-template-columns: minmax(9rem, 1.5fr) 4rem repeat(2, minmax(8.5rem, 1fr)); }
+@media (max-width: 560px) { .board-row { grid-template-columns: minmax(7rem, 1fr) 3rem minmax(6rem, 1fr); } .board-row .oct-hide { display: none; } }

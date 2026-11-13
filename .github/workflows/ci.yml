@@ -1,0 +1,93 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: ci }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 20
+    env:
+      MBB_TEST_PG: postgresql://postgres:ci@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e ".[dev]"
+      - run: ruff check src scripts tests
+      - run: pytest -q
+
+  evaluation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e ".[dev]" matplotlib
+      - name: The committed dev report is what the code produces
+        run: python3 scripts/evaluate.py --check --workers 4
+      - name: README, chart and dashboard data match the reports
+        run: python3 scripts/readme.py && git diff --exit-code README.md web/public/data/dashboard.json
+
+  trino:
+    runs-on: ubuntu-latest
+    services:
+      trino:
+        image: trinodb/trino:latest
+        ports: ["8080:8080"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e ".[trino]"
+      - name: Every model returns the same rows on Trino and DuckDB
+        run: python3 scripts/trino_parity.py --host localhost --port 8080
+
+  airflow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install "apache-airflow==2.10.5" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.5/constraints-3.12.txt"
+      - name: The DAG imports and has the four steps in order
+        run: |
+          python - <<'PY'
+          from airflow.models import DagBag
+          bag = DagBag(dag_folder="orchestration/airflow/dags", include_examples=False)
+          assert not bag.import_errors, bag.import_errors
+          dag = bag.get_dag("metasearch_billing_backbone")
+          order = [t.task_id for t in dag.topological_sort()]
+          assert order == ["load", "build", "check", "invoice"], order
+          print("DAG ok:", order)
+          PY
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t metasearch-billing-backbone .
+      - run: docker run --rm metasearch-billing-backbone trino-sql | head -5
+      - run: docker compose -f deploy/docker-compose.yml config -q
+
+  dashboard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build

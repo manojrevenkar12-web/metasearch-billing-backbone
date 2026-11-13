@@ -1,0 +1,36 @@
+# Rundeck job definitions (YAML job format). The same four steps as the Airflow DAG, for teams that schedule
+# with Rundeck. Import with: rd jobs load -f billing-backbone.yaml -F yaml -p bi
+- name: billing-backbone-daily
+  group: bi/billing
+  description: Redirect logs to partner invoices, with checks that hold a wrong invoice
+  loglevel: INFO
+  multipleExecutions: false
+  schedule:
+    time: { hour: "06", minute: "00", seconds: "0" }
+    month: "*"
+    weekday: { day: "*" }
+    year: "*"
+  timeZone: UTC
+  options:
+    - name: as_of
+      description: run time, ISO 8601 UTC, or now
+      value: now
+    - name: state
+      value: /data/warehouse.duckdb
+    - name: world
+      value: /data/world
+  sequence:
+    keepgoing: false
+    strategy: node-first
+    commands:
+      - description: load
+        exec: mbb load --world ${option.world} --state ${option.state} --as-of ${option.as_of}
+      - description: build
+        exec: mbb build --world ${option.world} --state ${option.state} --as-of ${option.as_of}
+      - description: check
+        exec: mbb check --world ${option.world} --state ${option.state} --as-of ${option.as_of}
+      - description: invoice
+        exec: mbb invoice --world ${option.world} --state ${option.state} --as-of ${option.as_of}
+  notification:
+    onfailure:
+      email: { recipients: bi-oncall@example.com, subject: "billing backbone failed: ${job.execid}" }
